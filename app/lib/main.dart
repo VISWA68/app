@@ -1,5 +1,6 @@
 import 'package:app/firebase_options.dart';
 import 'package:app/providers/daily_prompt_provider.dart';
+import 'package:app/providers/map_provider.dart';
 import 'package:app/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => MemoryProvider()),
         ChangeNotifierProvider(create: (context) => DailyPromptProvider()),
+        ChangeNotifierProvider(
+          create: (context) => MapProvider(),
+        ), // Assuming you have a MapProvider
         // Add other providers here if needed
       ],
       child: MyApp(),

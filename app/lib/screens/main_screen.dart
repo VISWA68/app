@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'daily_prompt_screen.dart';
 import 'time_line_screen.dart';
-//import 'map_screen.dart'; // Uncomment this once you start building the map screen
+import 'map_screen.dart'; // Uncomment this once you start building the map screen
 import '../utils/database_helper.dart';
 
 class MainScreen extends StatefulWidget {
@@ -19,9 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _widgetOptions = <Widget>[
     const DailyPromptScreen(),
     TimeLineScreen(),
-    const Text('Map Screen (Coming Soon!)'), // Use a placeholder for now
-    // Uncomment the line below once the MapScreen is ready
-    // const MapScreen(),
+    const MapScreen(),
   ];
 
   @override
