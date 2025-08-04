@@ -1,6 +1,6 @@
+import 'package:app/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:app/utils/database_helper.dart';
-import 'home_screen.dart';
 
 class CharacterSelectionScreen extends StatelessWidget {
   const CharacterSelectionScreen({Key? key}) : super(key: key);
@@ -11,7 +11,7 @@ class CharacterSelectionScreen extends StatelessWidget {
 
     Navigator.of(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
+    ).pushReplacement(MaterialPageRoute(builder: (context) => MainScreen()));
   }
 
   @override

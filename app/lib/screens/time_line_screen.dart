@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import '../providers/memory_provider.dart';
 import '../widgets/memory_timeline_item.dart';
 
-class HomeScreen extends StatefulWidget {
+class TimeLineScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<TimeLineScreen> {
   @override
   void initState() {
     super.initState();

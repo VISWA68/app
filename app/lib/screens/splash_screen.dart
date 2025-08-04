@@ -1,6 +1,7 @@
+import 'package:app/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:app/utils/database_helper.dart';
-import 'home_screen.dart';
+import 'time_line_screen.dart';
 import 'character_selection_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (characterChoice != null) {
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
+      ).pushReplacement(MaterialPageRoute(builder: (context) => MainScreen()));
     } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => CharacterSelectionScreen()),

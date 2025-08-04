@@ -1,19 +1,24 @@
+import 'package:app/firebase_options.dart';
+import 'package:app/providers/daily_prompt_provider.dart';
 import 'package:app/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
 import 'providers/memory_provider.dart';
-import 'screens/home_screen.dart'; // We'll create this
 
-void main()async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    
-  await Firebase.initializeApp(); 
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => MemoryProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => MemoryProvider()),
+        ChangeNotifierProvider(create: (context) => DailyPromptProvider()),
+        // Add other providers here if needed
+      ],
       child: MyApp(),
     ),
   );
