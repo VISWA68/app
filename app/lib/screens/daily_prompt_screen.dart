@@ -60,7 +60,8 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
   Widget build(BuildContext context) {
     final dailyPromptProvider = context.watch<DailyPromptProvider>();
     final bool canSendPrompt = !dailyPromptProvider.hasSentPrompt;
-
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+    final totalBottomPadding = 60 + bottomSafeArea;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -73,7 +74,7 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.only(bottom: totalBottomPadding),
           child: Column(
             children: [
               if (dailyPromptProvider.otherPersonPrompt != null)
