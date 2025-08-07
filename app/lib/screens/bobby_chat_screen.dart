@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/bobby_chat_provider.dart';
 import '../models/chat_message.dart';
-import '../utils/database_helper.dart';
 
 class BobbyChatScreen extends StatefulWidget {
   final String userRole;

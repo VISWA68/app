@@ -1,4 +1,5 @@
 import 'package:app/screens/bobby_chat_screen.dart';
+import 'package:app/screens/quiz_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:geolocator/geolocator.dart';
@@ -101,8 +102,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       case 2:
         return MapScreen(currentLocation: _currentLocation);
       case 3:
-        // Here, we create the BobbyChatScreen dynamically
         return BobbyChatScreen(userRole: _userRole!);
+      case 4:
+        return QuizScreen();
       default:
         return const Center(child: Text('Screen Not Found'));
     }
@@ -150,6 +152,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             width: 32,
             height: 32,
             color: _selectedIndex == 3
+                ? Colors.white
+                : Theme.of(context).primaryColor,
+          ),
+          Icon(
+            Icons.quiz_outlined,
+            size: 32,
+            color: _selectedIndex == 4
                 ? Colors.white
                 : Theme.of(context).primaryColor,
           ),
