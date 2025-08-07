@@ -15,7 +15,7 @@ class AddPlaceScreen extends StatefulWidget {
 
 class _AddPlaceScreenState extends State<AddPlaceScreen> {
   final TextEditingController _descriptionController = TextEditingController();
-  LatLng _selectedLocation = const LatLng(20.5937, 78.9629);
+  LatLng? _selectedLocation;
   String? _userRole;
   final String _imageUrl = 'https://picsum.photos/id/14/200/300';
   bool _isLoading = false;
@@ -23,6 +23,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedLocation = widget.currentLocation;
     _loadUserRole();
   }
 
@@ -52,8 +53,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         authorRole: _userRole!,
         imageUrl: _imageUrl,
         description: _descriptionController.text,
-        latitude: _selectedLocation.latitude,
-        longitude: _selectedLocation.longitude,
+        latitude: _selectedLocation!.latitude,
+        longitude: _selectedLocation!.longitude,
       );
 
       if (mounted) {
@@ -91,7 +92,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Cute image preview card
                     Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
@@ -107,7 +107,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Cute text field for description
                     TextField(
                       controller: _descriptionController,
                       decoration: InputDecoration(
@@ -128,7 +127,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 16),
-                    // Mini map for location selection
                     SizedBox(
                       height: 300,
                       child: Card(
@@ -140,8 +138,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                           borderRadius: BorderRadius.circular(20),
                           child: FlutterMap(
                             options: MapOptions(
-                              initialCenter: widget.currentLocation,
-                              initialZoom: 4,
+                              initialCenter: _selectedLocation!,
+                              initialZoom: 14,
                               onTap: (tapPosition, point) {
                                 setState(() {
                                   _selectedLocation = point;
@@ -150,17 +148,15 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName:
-                                    'com.example.our_little_world',
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.example.our_little_world',
                               ),
                               MarkerLayer(
                                 markers: [
                                   Marker(
                                     width: 60.0,
                                     height: 60.0,
-                                    point: widget.currentLocation,
+                                    point: _selectedLocation!,
                                     child: Image.asset(
                                       _userRole == 'Panda'
                                           ? 'assets/images/panda_avatar.png'
@@ -185,15 +181,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                           horizontal: 40,
                           vertical: 16,
                         ),
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondary,
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
                       ),
                       child: Text(
                         'Save This Place',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
                       ),
                     ),
                   ],

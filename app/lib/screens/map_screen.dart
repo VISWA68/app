@@ -7,12 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart'; // Import geolocator
+import 'package:geolocator/geolocator.dart'; 
 import '../providers/map_provider.dart';
 import '../utils/database_helper.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final LatLng? currentLocation;
+  const MapScreen({super.key, required this.currentLocation});
 
   @override
   _MapScreenState createState() => _MapScreenState();
@@ -20,12 +21,15 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   String? _userRole;
-  LatLng? _currentLocation; // New state variable for user's location
+  LatLng? _currentLocation;
 
   @override
   void initState() {
     super.initState();
     _loadUserAndLocation();
+    setState(() {
+      _currentLocation = widget.currentLocation;
+    });
   }
 
   void _loadUserAndLocation() async {
@@ -35,40 +39,6 @@ class _MapScreenState extends State<MapScreen> {
         _userRole = role;
       });
       context.read<MapProvider>().fetchPlaces();
-    }
-
-    await _getCurrentLocation();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied.');
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    if (mounted) {
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-      });
     }
   }
 
