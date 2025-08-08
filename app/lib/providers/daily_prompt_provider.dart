@@ -5,85 +5,96 @@ import 'package:intl/intl.dart';
 class DailyPromptProvider with ChangeNotifier {
   String? _otherPersonPrompt;
   bool _hasSentPrompt = false;
+  String? _myMoodEmoji;
+  String? _myMoodText;
+  String? _myMoodReason;
+  String? _otherPersonMoodEmoji;
+  String? _otherPersonMoodText;
+  String? _otherPersonMoodReason;
+
   String? get otherPersonPrompt => _otherPersonPrompt;
   bool get hasSentPrompt => _hasSentPrompt;
+  String? get myMoodEmoji => _myMoodEmoji;
+  String? get myMoodText => _myMoodText;
+  String? get myMoodReason => _myMoodReason;
+  String? get otherPersonMoodEmoji => _otherPersonMoodEmoji;
+  String? get otherPersonMoodText => _otherPersonMoodText;
+  String? get otherPersonMoodReason => _otherPersonMoodReason;
 
-  // This will listen for the other person's prompt and check your own
   void startListeningForPrompts(String myRole, String otherPersonRole) {
     _listenForOtherPrompt(otherPersonRole);
     _checkMyPromptStatus(myRole);
+    _listenForMoods(myRole, otherPersonRole);
+  }
+
+  void _listenForMoods(String myRole, String otherPersonRole) {
+    final myMoodDocId = myRole.toLowerCase();
+    final otherMoodDocId = otherPersonRole.toLowerCase();
+
+    // Listen to my mood to display in the UI
+    FirebaseFirestore.instance.collection('moods').doc(myMoodDocId).snapshots().listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        _myMoodEmoji = data['emoji'];
+        _myMoodText = data['moodText'];
+        _myMoodReason = data['reason'];
+        notifyListeners();
+      }
+    });
+
+    // Listen to the other person's mood
+    FirebaseFirestore.instance.collection('moods').doc(otherMoodDocId).snapshots().listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        _otherPersonMoodEmoji = data['emoji'];
+        _otherPersonMoodText = data['moodText'];
+        _otherPersonMoodReason = data['reason'];
+        notifyListeners();
+      }
+    });
+  }
+
+  Future<void> updateMyMood({
+    required String myRole,
+    required String emoji,
+    required String moodText,
+    String? reason,
+  }) async {
+    final myMoodDocId = myRole.toLowerCase();
+    await FirebaseFirestore.instance.collection('moods').doc(myMoodDocId).set({
+      'emoji': emoji,
+      'moodText': moodText,
+      'reason': reason,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   void _listenForOtherPrompt(String otherPersonRole) {
-    final otherUserDocId = '${otherPersonRole.toLowerCase()}_prompt';
-
-    FirebaseFirestore.instance
-        .collection('dailyPrompts')
-        .doc(otherUserDocId)
-        .snapshots()
-        .listen((DocumentSnapshot snapshot) {
+    FirebaseFirestore.instance.collection('prompts').doc(otherPersonRole.toLowerCase()).snapshots().listen((snapshot) {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data() as Map<String, dynamic>;
-        
-        // Convert the Firestore Timestamp to a DateTime
-        final promptTimestamp = (data['timestamp'] as Timestamp?)?.toDate();
-        final now = DateTime.now();
-        
-        // Check if the prompt is from today (IST timezone)
-        if (promptTimestamp != null &&
-            DateFormat('yyyy-MM-dd').format(promptTimestamp.toLocal()) ==
-            DateFormat('yyyy-MM-dd').format(now.toLocal())) {
-          _otherPersonPrompt = data['prompt'] as String?;
-        } else {
-          // The prompt is from a previous day, so clear it
-          _otherPersonPrompt = null;
-        }
-      } else {
-        _otherPersonPrompt = null;
+        _otherPersonPrompt = data['prompt'];
+        notifyListeners();
       }
-      notifyListeners();
     });
   }
 
-  // Check your own prompt status to disable the button
-  void _checkMyPromptStatus(String myRole) {
-    final myUserDocId = '${myRole.toLowerCase()}_prompt';
-
-    FirebaseFirestore.instance
-        .collection('dailyPrompts')
-        .doc(myUserDocId)
-        .snapshots()
-        .listen((DocumentSnapshot snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        final promptTimestamp = (data['timestamp'] as Timestamp?)?.toDate();
-        final now = DateTime.now();
-
-        if (promptTimestamp != null &&
-            DateFormat('yyyy-MM-dd').format(promptTimestamp.toLocal()) ==
-            DateFormat('yyyy-MM-dd').format(now.toLocal())) {
-          // You have already sent a prompt today
-          _hasSentPrompt = true;
-        } else {
-          _hasSentPrompt = false;
-        }
-      } else {
-        _hasSentPrompt = false;
-      }
+  Future<void> _checkMyPromptStatus(String myRole) async {
+    final doc = await FirebaseFirestore.instance.collection('prompts').doc(myRole.toLowerCase()).get();
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data() as Map<String, dynamic>;
+      _hasSentPrompt = data['hasSent'] ?? false;
       notifyListeners();
-    });
+    }
   }
 
-  Future<void> sendMyPrompt(String myRole, String message) async {
-    final myUserDocId = '${myRole.toLowerCase()}_prompt';
-    await FirebaseFirestore.instance.collection('dailyPrompts').doc(myUserDocId).set({
-      'senderId': myRole,
-      'senderAvatar': myRole.toLowerCase(),
-      'prompt': message,
+  Future<void> sendMyPrompt(String myRole, String prompt) async {
+    await FirebaseFirestore.instance.collection('prompts').doc(myRole.toLowerCase()).set({
+      'prompt': prompt,
+      'hasSent': true,
       'timestamp': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    
-    // After sending, we don't need to manually update `_hasSentPrompt` here
-    // because the `_checkMyPromptStatus` stream will automatically do it for us.
+    _hasSentPrompt = true;
+    notifyListeners();
   }
 }
