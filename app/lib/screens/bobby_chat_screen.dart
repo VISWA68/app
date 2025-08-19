@@ -34,7 +34,9 @@ class _BobbyChatScreenState extends State<BobbyChatScreen> {
 
   void _sendMessage() {
     if (_textController.text.isNotEmpty) {
-      context.read<BobbyChatProvider>().sendMessage(_textController.text);
+      context.read<BobbyChatProvider>().sendMessage(
+        "I am ${widget.userRole}, ${_textController.text}",
+      );
       _textController.clear();
     }
   }
