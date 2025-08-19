@@ -38,6 +38,7 @@ class _QuizScreenState extends State<QuizScreen>
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: Text(
           'Quiz Time!',
           style: Theme.of(context).textTheme.headlineLarge,

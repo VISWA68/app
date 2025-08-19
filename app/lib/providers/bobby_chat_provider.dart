@@ -113,7 +113,7 @@ class BobbyChatProvider with ChangeNotifier {
       ...sharedMessages
           .map((m) => Content.text('${m.sender}: ${m.text}'))
           .toList(),
-      Content.text('My message is: "$message"'),
+      Content.text('I am $_userRole: "$message"'),
     ];
 
     try {
