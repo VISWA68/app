@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/quiz_model.dart';
 import '../utils/database_helper.dart';
+import '../services/notification_service.dart';
 
 class QuizProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -26,17 +27,28 @@ class QuizProvider with ChangeNotifier {
   }
 
   void _fetchQuizzes(String userRole) {
-    _firestore.collection('quizzes')
-      .snapshots()
-      .listen((snapshot) {
-        final allQuizzes = snapshot.docs.map((doc) => Quiz.fromFirestore(doc)).toList();
-        
-        _pendingQuizzes = allQuizzes.where((quiz) => quiz.status == 'pending' && quiz.creatorRole != userRole).toList();
-        _completedQuizzes = allQuizzes.where((quiz) => quiz.playerAnswers != null && quiz.creatorRole != userRole).toList(); // Filter for quizzes you have taken
-        _myQuizzes = allQuizzes.where((quiz) => quiz.creatorRole == userRole).toList();
-        
-        notifyListeners();
-      });
+    _firestore.collection('quizzes').snapshots().listen((snapshot) {
+      final allQuizzes = snapshot.docs
+          .map((doc) => Quiz.fromFirestore(doc))
+          .toList();
+
+      _pendingQuizzes = allQuizzes
+          .where(
+            (quiz) => quiz.status == 'pending' && quiz.creatorRole != userRole,
+          )
+          .toList();
+      _completedQuizzes = allQuizzes
+          .where(
+            (quiz) =>
+                quiz.playerAnswers != null && quiz.creatorRole != userRole,
+          )
+          .toList(); // Filter for quizzes you have taken
+      _myQuizzes = allQuizzes
+          .where((quiz) => quiz.creatorRole == userRole)
+          .toList();
+
+      notifyListeners();
+    });
   }
 
   Future<void> createQuiz({
@@ -56,6 +68,10 @@ class QuizProvider with ChangeNotifier {
     );
 
     await _firestore.collection('quizzes').add(quiz.toMap());
+
+    // Notify the other user
+    final otherUser = creatorRole == 'Panda' ? 'Penguin' : 'Panda';
+    await NotificationService().notifyQuizEvent(otherUser, 'created');
   }
 
   Future<void> completeQuiz({
@@ -67,6 +83,16 @@ class QuizProvider with ChangeNotifier {
       'playerAnswers': playerAnswers,
       'answeredAt': FieldValue.serverTimestamp(),
     });
+
+    // Notify the creator
+    final quizDoc = await _firestore.collection('quizzes').doc(quizId).get();
+    if (quizDoc.exists) {
+      final data = quizDoc.data() as Map<String, dynamic>;
+      final creatorRole = data['creatorRole'] as String?;
+      if (creatorRole != null) {
+        await NotificationService().notifyQuizEvent(creatorRole, 'completed');
+      }
+    }
   }
 
   Future<void> validateQuiz({
@@ -77,5 +103,16 @@ class QuizProvider with ChangeNotifier {
       'status': 'validated',
       'creatorScore': creatorScore,
     });
+
+    // Notify the player
+    final quizDoc = await _firestore.collection('quizzes').doc(quizId).get();
+    if (quizDoc.exists) {
+      final data = quizDoc.data() as Map<String, dynamic>;
+      final creatorRole = data['creatorRole'] as String?;
+      if (creatorRole != null) {
+        final playerRole = creatorRole == 'Panda' ? 'Penguin' : 'Panda';
+        await NotificationService().notifyQuizEvent(playerRole, 'validated');
+      }
+    }
   }
 }

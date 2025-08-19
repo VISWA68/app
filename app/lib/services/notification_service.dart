@@ -1,80 +1,115 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../utils/database_helper.dart';
-
-// Create a global instance of the local notifications plugin
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Handle background messages here, e.g., set up a global navigator key
-  print("Handling a background message: ${message.messageId}");
-}
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class NotificationService {
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const String oneSignalAppId = 'd4659fae-a932-4b14-83d3-771070f87c54';
 
   Future<void> initialize() async {
-    // Android-specific initialization
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+    OneSignal.Debug.setAlertLevel(OSLogLevel.none);
+    OneSignal.initialize(oneSignalAppId);
+    OneSignal.Notifications.requestPermission(true);
 
-    // iOS-specific initialization (empty for now)
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      // iOS: initializationSettingsDarwin,
+    // Set up notification event listeners
+    OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+      // You can choose to display or suppress the notification
+      event.preventDefault();
+      event.notification.display();
+    });
+    OneSignal.Notifications.addClickListener((event) {
+      print('Notification opened: ${event.notification.jsonRepresentation()}');
+      // Implement navigation or logic here
+    });
+    OneSignal.User.pushSubscription.addObserver((state) {
+      print('Push subscription changed: ${state.current.jsonRepresentation()}');
+    });
+    OneSignal.User.addObserver((state) {
+      print('OneSignal user changed: ${state.jsonRepresentation()}');
+    });
+    OneSignal.Notifications.addPermissionObserver((state) {
+      print('Notification permission changed: $state');
+    });
+  }
+
+  // Core method to send a notification via OneSignal REST API
+  Future<void> sendNotificationToUser({
+    required String externalUserId,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    final url = Uri.parse('https://onesignal.com/api/v1/notifications');
+    final headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Authorization':
+          'Basic os_v2_app_2rsz7lvjgjfrja6to4ihb6d4krq4t6hfwhgulludfjzlbkwhdtzfzkepl2tkbysg5vtillvssrajopadhgn5wsphxyg22o3mruwmj4q', // <-- Paste your REST API key here
+    };
+    final payload = {
+      'app_id': oneSignalAppId,
+      'include_external_user_ids': [externalUserId],
+      'headings': {'en': title},
+      'contents': {'en': body},
+      if (data != null) 'data': data,
+    };
+
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
     );
-
-    // Initialize the plugin
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-    // Request permission for push notifications
-    await _fcm.requestPermission();
-    
-    // Get the FCM token and store it in Firestore
-    final fcmToken = await _fcm.getToken();
-    if (fcmToken != null) {
-      final userRole = await DatabaseHelper().getCharacterChoice();
-      if (userRole != null) {
-        await _firestore.collection('users').doc(userRole).set({
-          'fcmToken': fcmToken,
-        }, SetOptions(merge: true));
-      }
+    print('Notification response: ${response.body}');
+    if (response.statusCode != 200) {
+      throw Exception('Failed to send notification: ${response.body}');
     }
+  }
 
-    // This is a handler for when a notification is received while the app is in the foreground.
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final RemoteNotification? notification = message.notification;
-      final AndroidNotification? android = message.notification?.android;
+  // Event-specific methods
+  Future<void> notifyDailyPromptUpdate(String externalUserId) async {
+    await sendNotificationToUser(
+      externalUserId: externalUserId,
+      title: 'Daily Prompt Updated',
+      body: 'A new daily prompt is available!',
+    );
+  }
 
-      if (notification != null && android != null) {
-        flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'high_importance_channel', // id
-              'High Importance Notifications', // title
-              importance: Importance.max,
-              priority: Priority.high,
-            ),
-          ),
-        );
-      }
-    });
+  Future<void> notifyMoodUpdate(String externalUserId, String mood) async {
+    await sendNotificationToUser(
+      externalUserId: externalUserId,
+      title: 'Mood Updated',
+      body: 'Mood updated to $mood.',
+    );
+  }
 
-    // This is a handler for when a user taps on a notification to open the app.
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // You can implement deep linking or specific navigation here
-      print("A message was opened!");
-      // Example: Navigator.of(GlobalKey().currentContext!).pushNamed('/quiz', arguments: message.data);
-    });
-    
-    // This is a handler for when a notification is received while the app is in the background or terminated.
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  Future<void> notifyQuizEvent(String externalUserId, String eventType) async {
+    String body;
+    switch (eventType) {
+      case 'created':
+        body = 'A new quiz has been created!';
+        break;
+      case 'validated':
+        body = 'A quiz has been validated!';
+        break;
+      case 'completed':
+        body = 'A quiz has been completed!';
+        break;
+      default:
+        body = 'Quiz event: $eventType';
+    }
+    await sendNotificationToUser(
+      externalUserId: externalUserId,
+      title: 'Quiz Update',
+      body: body,
+    );
+  }
+
+  /// Set the external user ID for this device (for targeting notifications)
+  Future<void> setExternalUserId(String externalUserId) async {
+    await OneSignal.login(externalUserId);
+  }
+
+  /// Remove the external user ID (logout)
+  Future<void> removeExternalUserId() async {
+    await OneSignal.logout();
   }
 }

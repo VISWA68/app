@@ -117,6 +117,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
 
     return Scaffold(
+      
       extendBody: true,
       body: Center(child: _getBodyWidget(_selectedIndex)),
       bottomNavigationBar: CurvedNavigationBar(

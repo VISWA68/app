@@ -1,22 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:timeline_tile/timeline_tile.dart';
-import '../models/memory_model.dart';
+import '../models/place_model.dart';
 
 class MemoryTimelineItem extends StatelessWidget {
-  final Memory memory;
+  final Place place;
+  final bool isFirst;
+  final bool isLast;
 
-  const MemoryTimelineItem({Key? key, required this.memory}) : super(key: key);
+  const MemoryTimelineItem({
+    Key? key, 
+    required this.place, 
+    this.isFirst = false, 
+    this.isLast = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Check if the author is you ('V') or her ('S')
-    final bool isPanda = memory.author == 'V';
+    // Check if the author is Panda or Penguin
+    final bool isPanda = place.authorRole == 'Panda';
     
     return TimelineTile(
       alignment: TimelineAlign.center,
-      isFirst: false,
-      isLast: false,
+      isFirst: isFirst,
+      isLast: isLast,
       endChild: isPanda ? _buildMemoryCard(context, isPanda) : null,
       startChild: isPanda ? null : _buildMemoryCard(context, isPanda),
       indicatorStyle: IndicatorStyle(
@@ -65,23 +72,25 @@ class MemoryTimelineItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (memory.photoUrl.isNotEmpty)
+            if (place.imageUrls.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: CachedNetworkImage(
-                  imageUrl: memory.photoUrl,
+                  imageUrl: place.imageUrls.first,
                   placeholder: (context, url) => Center(child: CircularProgressIndicator()),
                   errorWidget: (context, url, error) => Icon(Icons.error),
                 ),
               ),
             const SizedBox(height: 12),
             Text(
-              memory.text,
+              place.description,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              '${memory.timestamp.day}/${memory.timestamp.month}/${memory.timestamp.year}',
+              place.timestamp != null 
+                  ? '${place.timestamp!.day}/${place.timestamp!.month}/${place.timestamp!.year}'
+                  : 'No date',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

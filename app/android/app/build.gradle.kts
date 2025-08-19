@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -45,10 +45,15 @@ android {
 }
 
 dependencies {
-    // Correct Kotlin DSL syntax for the dependency
+    // Correct Kotlin DSL syntax for the dependencies
+    implementation("com.google.android.gms:play-services-base:18.2.0")
+    implementation ("com.google.android.gms:play-services-auth:21.1.0")
+    implementation ("androidx.credentials:credentials:1.2.0")
+    implementation ("androidx.credentials:credentials-play-services-auth:1.2.0")
+    implementation ("com.google.firebase:firebase-messaging")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
-
 flutter {
     source = "../.."
 }

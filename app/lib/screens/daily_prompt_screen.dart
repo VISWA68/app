@@ -1,3 +1,4 @@
+import 'package:app/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/daily_prompt_provider.dart';
@@ -433,6 +434,17 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+        ],
         title: Text(
           'Hey $_userRole',
           style: Theme.of(context).textTheme.headlineLarge,

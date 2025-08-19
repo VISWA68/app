@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../services/notification_service.dart';
 
 class DailyPromptProvider with ChangeNotifier {
   String? _otherPersonPrompt;
@@ -32,26 +33,34 @@ class DailyPromptProvider with ChangeNotifier {
     final otherMoodDocId = otherPersonRole.toLowerCase();
 
     // Listen to my mood to display in the UI
-    FirebaseFirestore.instance.collection('moods').doc(myMoodDocId).snapshots().listen((snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        _myMoodEmoji = data['emoji'];
-        _myMoodText = data['moodText'];
-        _myMoodReason = data['reason'];
-        notifyListeners();
-      }
-    });
+    FirebaseFirestore.instance
+        .collection('moods')
+        .doc(myMoodDocId)
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists && snapshot.data() != null) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            _myMoodEmoji = data['emoji'];
+            _myMoodText = data['moodText'];
+            _myMoodReason = data['reason'];
+            notifyListeners();
+          }
+        });
 
     // Listen to the other person's mood
-    FirebaseFirestore.instance.collection('moods').doc(otherMoodDocId).snapshots().listen((snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        _otherPersonMoodEmoji = data['emoji'];
-        _otherPersonMoodText = data['moodText'];
-        _otherPersonMoodReason = data['reason'];
-        notifyListeners();
-      }
-    });
+    FirebaseFirestore.instance
+        .collection('moods')
+        .doc(otherMoodDocId)
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists && snapshot.data() != null) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            _otherPersonMoodEmoji = data['emoji'];
+            _otherPersonMoodText = data['moodText'];
+            _otherPersonMoodReason = data['reason'];
+            notifyListeners();
+          }
+        });
   }
 
   Future<void> updateMyMood({
@@ -67,20 +76,31 @@ class DailyPromptProvider with ChangeNotifier {
       'reason': reason,
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    // Notify the other user
+    final otherUser = myRole == 'Panda' ? 'Penguin' : 'Panda';
+    await NotificationService().notifyMoodUpdate(otherUser, moodText);
   }
 
   void _listenForOtherPrompt(String otherPersonRole) {
-    FirebaseFirestore.instance.collection('prompts').doc(otherPersonRole.toLowerCase()).snapshots().listen((snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        _otherPersonPrompt = data['prompt'];
-        notifyListeners();
-      }
-    });
+    FirebaseFirestore.instance
+        .collection('prompts')
+        .doc(otherPersonRole.toLowerCase())
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists && snapshot.data() != null) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            _otherPersonPrompt = data['prompt'];
+            notifyListeners();
+          }
+        });
   }
 
   Future<void> _checkMyPromptStatus(String myRole) async {
-    final doc = await FirebaseFirestore.instance.collection('prompts').doc(myRole.toLowerCase()).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('prompts')
+        .doc(myRole.toLowerCase())
+        .get();
     if (doc.exists && doc.data() != null) {
       final data = doc.data() as Map<String, dynamic>;
       _hasSentPrompt = data['hasSent'] ?? false;
@@ -89,12 +109,19 @@ class DailyPromptProvider with ChangeNotifier {
   }
 
   Future<void> sendMyPrompt(String myRole, String prompt) async {
-    await FirebaseFirestore.instance.collection('prompts').doc(myRole.toLowerCase()).set({
-      'prompt': prompt,
-      'hasSent': true,
-      'timestamp': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    await FirebaseFirestore.instance
+        .collection('prompts')
+        .doc(myRole.toLowerCase())
+        .set({
+          'prompt': prompt,
+          'hasSent': true,
+          'timestamp': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
     _hasSentPrompt = true;
     notifyListeners();
+
+    // Notify the other user
+    final otherUser = myRole == 'Panda' ? 'Penguin' : 'Panda';
+    await NotificationService().notifyDailyPromptUpdate(otherUser);
   }
 }

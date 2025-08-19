@@ -7,7 +7,7 @@ import '../models/place_model.dart';
 class MapProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  
+
   List<Place> _places = [];
   List<Place> get places => _places;
 
@@ -19,9 +19,10 @@ class MapProvider with ChangeNotifier {
     });
   }
 
-  Future<void> addPlaceWithUrl({
+  // Add a place with a list of image URLs (e.g., uploaded to Google Drive)
+  Future<void> addPlaceWithUrls({
     required String authorRole,
-    required String imageUrl,
+    required List<String> imageUrls,
     required String description,
     required double latitude,
     required double longitude,
@@ -33,19 +34,18 @@ class MapProvider with ChangeNotifier {
         description: description,
         latitude: latitude,
         longitude: longitude,
-        imageUrl: imageUrl,
+        imageUrls: imageUrls,
       );
-
       await _firestore.collection('places').add(newPlace.toMap());
     } catch (e) {
       if (kDebugMode) {
-        print('Error adding place with URL: $e');
+        print('Error adding place with URLs: $e');
       }
     }
   }
 
-  // This method adds a new place with an image to Firestore and Storage
-  Future<void> addPlace({
+  // This method adds a new place with a single image file (uploaded to Firebase Storage)
+  Future<void> addPlaceWithFile({
     required String authorRole,
     required File imageFile,
     required String description,
@@ -54,7 +54,8 @@ class MapProvider with ChangeNotifier {
   }) async {
     try {
       // 1. Upload the image to Firebase Storage
-      final String imagePath = 'places/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String imagePath =
+          'places/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final Reference storageRef = _storage.ref().child(imagePath);
       final UploadTask uploadTask = storageRef.putFile(imageFile);
       final TaskSnapshot snapshot = await uploadTask;
@@ -67,14 +68,12 @@ class MapProvider with ChangeNotifier {
         description: description,
         latitude: latitude,
         longitude: longitude,
-        imageUrl: imageUrl,
+        imageUrls: [imageUrl],
       );
 
       // 3. Add the place data to Firestore
       await _firestore.collection('places').add(newPlace.toMap());
-      
       // The `fetchPlaces` stream will automatically update the UI after this.
-
     } catch (e) {
       if (kDebugMode) {
         print('Error adding place: $e');

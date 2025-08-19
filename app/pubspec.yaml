@@ -57,6 +57,12 @@ dependencies:
   firebase_vertexai: ^2.0.0
   firebase_messaging: ^16.0.0
   flutter_local_notifications: ^19.4.0
+  google_sign_in: ^7.1.1
+  googleapis: ^14.0.0
+  shared_preferences: ^2.2.2
+
+  # OneSignal push notification
+  onesignal_flutter: ^5.2.0
 
 dev_dependencies:
   flutter_test:
