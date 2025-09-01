@@ -369,7 +369,12 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
     );
   }
 
-  Widget _buildOtherPersonThought(BuildContext context, String message) {
+  Widget _buildThoughtCard(
+    BuildContext context,
+    String message,
+    String role, {
+    bool isMyThought = false,
+  }) {
     return Card(
       color: Theme.of(context).cardColor,
       child: Padding(
@@ -378,7 +383,7 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.asset(
-              _otherUserRole == 'Panda'
+              role == 'Panda'
                   ? 'assets/images/panda_avatar.png'
                   : 'assets/images/penguin_avatar.png',
               width: 40,
@@ -386,9 +391,20 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isMyThought)
+                    Text(
+                      'Your last thought:',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  if (isMyThought) const SizedBox(height: 4),
+                  Text(message, style: Theme.of(context).textTheme.bodyLarge),
+                ],
               ),
             ),
           ],
@@ -428,7 +444,6 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
   @override
   Widget build(BuildContext context) {
     final dailyPromptProvider = context.watch<DailyPromptProvider>();
-    final bool canSendPrompt = !dailyPromptProvider.hasSentPrompt;
     final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     final totalBottomPadding = 60 + bottomSafeArea;
 
@@ -460,17 +475,32 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
               padding: EdgeInsets.only(bottom: totalBottomPadding),
               child: Column(
                 children: [
+                  // Display partner's thought
                   if (dailyPromptProvider.otherPersonPrompt != null)
-                    _buildOtherPersonThought(
+                    _buildThoughtCard(
                       context,
                       dailyPromptProvider.otherPersonPrompt!,
+                      _otherUserRole,
                     )
                   else
                     _buildEmptyThoughtState(context, _otherUserRole),
 
+                  const SizedBox(height: 16),
+
+                  // Display user's last thought if it exists
+                  if (dailyPromptProvider.myLastPrompt != null)
+                    _buildThoughtCard(
+                      context,
+                      dailyPromptProvider.myLastPrompt!,
+                      _userRole,
+                      isMyThought: true,
+                    ),
+
                   const SizedBox(height: 24),
                   Text(
-                    'What do you want to tell your $_otherUserRole today?',
+                    dailyPromptProvider.myLastPrompt != null
+                        ? 'Want to share another thought with your $_otherUserRole?'
+                        : 'What do you want to tell your $_otherUserRole today?',
                     style: Theme.of(context).textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
@@ -480,46 +510,33 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
                     children: _hardcodedPrompts.map((prompt) {
                       return ActionChip(
                         label: Text(prompt),
-                        backgroundColor: canSendPrompt
-                            ? Theme.of(context).cardColor
-                            : Colors.grey[200],
+                        backgroundColor: Theme.of(context).cardColor,
                         labelStyle: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(
-                              color: canSendPrompt
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey,
-                            ),
-                        onPressed: canSendPrompt
-                            ? () {
-                                _textController.text = prompt;
-                              }
-                            : null,
+                            ?.copyWith(color: Theme.of(context).primaryColor),
+                        onPressed: () {
+                          _textController.text = prompt;
+                        },
                       );
                     }).toList(),
                   ),
                   const SizedBox(height: 24),
                   TextField(
                     controller: _textController,
-                    readOnly: !canSendPrompt,
                     decoration: InputDecoration(
-                      hintText: canSendPrompt
-                          ? 'Share a sweet thought...'
-                          : 'You have already sent your thought for today!',
+                      hintText: 'Share a sweet thought...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: canSendPrompt
-                          ? Theme.of(context).cardColor
-                          : Colors.grey[200],
+                      fillColor: Theme.of(context).cardColor,
                       contentPadding: const EdgeInsets.all(20),
                     ),
                     maxLines: 4,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: canSendPrompt ? _sendPrompt : null,
+                    onPressed: _sendPrompt,
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -528,12 +545,12 @@ class _DailyPromptScreenState extends State<DailyPromptScreen> {
                         horizontal: 40,
                         vertical: 16,
                       ),
-                      backgroundColor: canSendPrompt
-                          ? Theme.of(context).colorScheme.secondary
-                          : Colors.grey,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
                     ),
                     child: Text(
-                      'Send a thought',
+                      dailyPromptProvider.myLastPrompt != null
+                          ? 'Send another thought'
+                          : 'Send a thought',
                       style: Theme.of(
                         context,
                       ).textTheme.titleLarge?.copyWith(color: Colors.white),

@@ -68,16 +68,16 @@ class NotificationService {
   Future<void> notifyDailyPromptUpdate(String externalUserId) async {
     await sendNotificationToUser(
       externalUserId: externalUserId,
-      title: 'Daily Prompt Updated',
-      body: 'A new daily prompt is available!',
+      title: '🌟 Daily Prompt Updated!',
+      body: '✨ A new daily prompt is here! Check it out now! 💡',
     );
   }
 
   Future<void> notifyMoodUpdate(String externalUserId, String mood) async {
     await sendNotificationToUser(
       externalUserId: externalUserId,
-      title: 'Mood Updated',
-      body: 'Mood updated to $mood.',
+      title: '😊 Mood Updated!',
+      body: '🌈 Your mood has been updated to "$mood"!',
     );
   }
 
@@ -85,20 +85,20 @@ class NotificationService {
     String body;
     switch (eventType) {
       case 'created':
-        body = 'A new quiz has been created!';
+        body = '🎉 A new quiz has been created! Dive in and give it a try! 📝';
         break;
       case 'validated':
-        body = 'A quiz has been validated!';
+        body = '✅ A quiz has been validated! Ready to explore? 🚀';
         break;
       case 'completed':
-        body = 'A quiz has been completed!';
+        body = '🏆 You’ve completed a quiz! Great job! 🎊';
         break;
       default:
-        body = 'Quiz event: $eventType';
+        body = '📚 Quiz event: $eventType. Stay curious! 🌟';
     }
     await sendNotificationToUser(
       externalUserId: externalUserId,
-      title: 'Quiz Update',
+      title: '🧠 Quiz Update!',
       body: body,
     );
   }

@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'package:app/utils/database_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/memory_model.dart';
-import '../utils/database_helper.dart';
 
 // HTTP client for Google Drive API
 class GoogleAuthHttpClient extends http.BaseClient {
@@ -29,6 +30,8 @@ enum MemoryFilterType {
 }
 
 class MemoryProvider with ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   List<Memory> _memories = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -170,29 +173,22 @@ class MemoryProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Upload images to Google Drive
       final imageUrls = await _uploadImagesToDrive(images, authHeaders);
 
       if (imageUrls.isEmpty) {
         throw Exception('Failed to upload any images');
       }
 
-      // Create memory object
-      final memory = Memory(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        author: author,
-        text: text,
-        photoUrls: imageUrls, // Multiple photos support
-        timestamp: DateTime.now(),
-        latitude: latitude,
-        longitude: longitude,
-      );
+      final memory = {
+        'author': author,
+        'text': text,
+        'photoUrls': imageUrls,
+        'timestamp': DateTime.now(),
+        'latitude': latitude,
+        'longitude': longitude,
+      };
 
-      // Save to local database
-      await DatabaseHelper().insertMemory(memory);
-
-      // Add to local list
-      _memories.add(memory);
+      await _firestore.collection('memories').add(memory);
 
       _isLoading = false;
       notifyListeners();
@@ -240,43 +236,19 @@ class MemoryProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Try to fetch from database first
-      final dbMemories = await DatabaseHelper().getMemories();
-
-      if (dbMemories.isNotEmpty) {
-        _memories = dbMemories;
-      } else {
-        // // Fallback to dummy data for demonstration
-        // _memories = [
-        //   Memory(
-        //     id: '1',
-        //     author: 'Panda',
-        //     text: "Our first adventure together! 🐼💕",
-        //     photoUrls: ['https://picsum.photos/id/1015/400/300'],
-        //     timestamp: DateTime.now().subtract(const Duration(days: 5)),
-        //     latitude: 12.9716,
-        //     longitude: 77.5946,
-        //   ),
-        //   Memory(
-        //     id: '2',
-        //     author: 'Penguin',
-        //     text: "Best coffee date ever! The cutest little café ☕🐧",
-        //     photoUrls: ['https://picsum.photos/id/429/400/300'],
-        //     timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        //     latitude: 12.9716,
-        //     longitude: 77.5946,
-        //   ),
-        //   Memory(
-        //     id: '3',
-        //     author: 'Panda',
-        //     text: "Look at this beautiful sunset we watched together 🌅",
-        //     photoUrls: ['https://picsum.photos/id/1011/400/300', 'https://picsum.photos/id/1012/400/300'],
-        //     timestamp: DateTime.now().subtract(const Duration(hours: 12)),
-        //     latitude: 12.9716,
-        //     longitude: 77.5946,
-        //   ),
-        // ];
-      }
+      final snapshot = await _firestore.collection('memories').get();
+      _memories = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Memory(
+          id: doc.id,
+          author: data['author'],
+          text: data['text'],
+          photoUrls: List<String>.from(data['photoUrls']),
+          timestamp: (data['timestamp'] as Timestamp).toDate(),
+          latitude: data['latitude'],
+          longitude: data['longitude'],
+        );
+      }).toList();
 
       _isLoading = false;
       notifyListeners();
@@ -290,7 +262,7 @@ class MemoryProvider with ChangeNotifier {
   // Delete a memory
   Future<void> deleteMemory(String memoryId) async {
     try {
-      await DatabaseHelper().deleteMemory(memoryId);
+      await _firestore.collection('memories').doc(memoryId).delete();
       _memories.removeWhere((memory) => memory.id == memoryId);
       notifyListeners();
     } catch (e) {
@@ -312,4 +284,5 @@ class MemoryProvider with ChangeNotifier {
   List<String> get uniqueAuthors {
     return _memories.map((memory) => memory.author).toSet().toList();
   }
+
 }

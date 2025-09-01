@@ -17,6 +17,8 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _controller = TextEditingController();
+  int _currentQuestionIndex = 0;
 
   @override
   void initState() {
@@ -28,6 +30,17 @@ class _QuizScreenState extends State<QuizScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _nextQuestion() {
+    setState(() {
+      _currentQuestionIndex++;
+      _controller.clear();
+    });
+  }
+
+  void _deleteQuestion(int index) {
+    // Logic to delete the question
   }
 
   @override

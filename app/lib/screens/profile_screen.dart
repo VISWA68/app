@@ -36,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _changeCharacter() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final newRole = _userRole == 'Panda' ? 'Penguin' : 'Panda';
       await DatabaseHelper().saveCharacterChoice(newRole);
@@ -70,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -135,16 +135,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Hello, ${_userRole ?? 'Friend'}! 👋',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Welcome to Our Little World',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -152,9 +155,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Account Section
             _buildSectionCard(
               title: 'Account Settings',
@@ -186,74 +189,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
-            // Character Section
-            _buildSectionCard(
-              title: 'Character Settings',
-              icon: Icons.pets,
-              children: [
-                _buildActionTile(
-                  icon: Icons.swap_horiz,
-                  title: 'Change Character',
-                  subtitle: 'Switch between Panda and Penguin',
-                  onTap: _isLoading ? null : _changeCharacter,
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        _userRole == 'Panda'
-                            ? 'assets/images/panda_avatar.png'
-                            : 'assets/images/penguin_avatar.png',
-                        width: 40,
-                        height: 40,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Current Character',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _userRole ?? 'Not set',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_isLoading)
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            
-            const SizedBox(height: 24),
-            
+
             // App Info Section
             _buildSectionCard(
               title: 'App Information',
@@ -285,9 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       elevation: 4,
       shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -303,9 +239,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -358,7 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   user?.email ?? 'No email',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -411,17 +349,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: isDestructive
-              ? Theme.of(context).colorScheme.error
-              : null,
+          color: isDestructive ? Theme.of(context).colorScheme.error : null,
         ),
       ),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
@@ -431,18 +365,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String subtitle,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
+      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
       subtitle: Text(subtitle),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
@@ -517,8 +443,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
-
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
@@ -532,10 +456,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+            color: Theme.of(
+              context,
+            ).textTheme.bodySmall?.color?.withOpacity(0.7),
           ),
         ),
       ],
     );
   }
-} 
+}
